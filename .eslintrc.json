@@ -214,13 +214,7 @@
         ],
         "operator-linebreak": [
             2,
-            "after",
-            {
-                "overrides": {
-                    "?": "before",
-                    ":": "before"
-                }
-            }
+            "after"
         ],
         "padded-blocks": "off",
         "quotes": "off",
