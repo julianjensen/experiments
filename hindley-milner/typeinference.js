@@ -24,6 +24,8 @@ const
         StringType,
         BoolType,
         NullType,
+        UndefinedType,
+        VoidType,
 
         Identifier,
         Apply,
@@ -208,7 +210,7 @@ function analyse( node, env, nonGeneric = [] )
                     argType = nodeToType( arg.type );
                 else
                 {
-                    argType = new TypeVariable();
+                    argType = new TypeVariable( arg.name );
                     newNonGeneric.push( argType );
                 }
 
@@ -303,6 +305,85 @@ function analyse( node, env, nonGeneric = [] )
 }
 
 /**
+ * ### Type analysis
+ *
+ * `analyse` is the core inference function. It takes an AST node and returns
+ * the infered type.
+ *
+ * @param node
+ * @param env
+ * @param {Array} nonGeneric
+ * @return {*}
+ */
+function analyse2( node, env, nonGeneric = [] )
+{
+    let types = [],
+        resultType;
+
+    switch ( node.type )
+    {
+        case 'FunctionDeclaration':
+            let newNonGeneric = nonGeneric.slice();
+
+            node.params.forEach( arg => {
+                let argType = is_literal( arg );
+
+                if ( !argType )
+                {
+                    argType = new TypeVariable();
+                    newNonGeneric.push( argType );
+                }
+
+                // env[ arg.name ] = argType;
+                types.push( argType );
+            } );
+
+            resultType = node.returns ? analyse2( node.returns, env, newNonGeneric ) : new VoidType();
+            types.push( resultType );
+
+            let annotationType;
+
+            if ( node.typed )
+            {
+                annotationType = is_literal( node.typed );
+                unify( resultType, annotationType );
+            }
+
+            return env[ node.name ] = new FunctionType( types );
+        case 'CallExpression':
+            types = [];
+
+            node.arguments.forEach( arg => types.push( analyse( arg, env, nonGeneric ) ) );
+
+            resultType = new TypeVariable();
+            types.push( resultType );
+
+            unify( new FunctionType( types ), analyse2( node.name, env, nonGeneric ) );
+
+            return resultType;
+        case 'VariableDeclarator':
+            const valueType = analyse2( node.init, env, nonGeneric );
+
+            if ( node.typed )
+                unify( valueType, is_literal( node.typed ) );
+
+            return env[ node.id ] = valueType;
+
+        case 'Identifier':
+            const name = node.name;
+
+            if ( !env[ name ] )
+                throw new TypeError( JSON.stringify( name ) + " is not defined" );
+
+            return fresh( env[ name ], nonGeneric );
+
+        case 'Literal':
+            return is_literal( node );
+    }
+}
+
+
+/**
  * Converts an AST node to type system type.
  *
  * @param type
@@ -350,6 +431,8 @@ function is_literal( node )
         case 'number':  return new NumberType();
         case 'boolean': return new BoolType();
         case 'null':    return new NullType();
+        case 'undefined': return new UndefinedType();
+        case 'void': return new VoidType();
     }
 }
 
@@ -365,23 +448,65 @@ function typecheck( ast, builtins = {} )
     return ast.map( node => analyse( node, builtins ) );
 }
 
+/**
+ * Run inference on an array of AST nodes.
+ *
+ * @param ast
+ * @param builtins
+ * @return {*}
+ */
+function typecheck2( ast, builtins = {} )
+{
+    return ast.map( node => analyse2( node, builtins ) );
+}
+
 module.exports = typecheck;
 
 // ## Examples
 if ( !module.parent )
 {
     const
+        env = {},
+        types2 = typecheck2( [
+                                 {
+                                     type: 'VariableDeclarator',
+                                     id: 'strVar',
+                                     init: {
+                                         type: 'Literal',
+                                         value: 'string'
+                                     }
+                                 },
+                                 {
+                                     type: 'FunctionDeclaration',
+                                     name: 'funky',
+                                     params: [ { type: 'Literal', value: 'number' } ],
+                                     returns: { type: 'Literal', value: 'string' }
+                                 },
+                                 {
+
+                                 }
+                             ], env ),
         types = typecheck( [
-        // let a = 10
-        //
-        // Result: Number
-        {
-            accept: a => a.visitLet(),
-            value:  {
-                accept: a => a.visitNumber(),
-                value:  10
-            }
-        },
+                               // let a = "hello"
+                               //
+                               // Result: String
+                               {
+                                   accept: a => a.visitLet(),
+                                   value:  {
+                                       accept: a => a.visitString(),
+                                       value:  "hello"
+                                   }
+                               },
+                               // let a = 10
+                               //
+                               // Result: Number
+                               {
+                                   accept: a => a.visitLet(),
+                                   value:  {
+                                       accept: a => a.visitNumber(),
+                                       value:  10
+                                   }
+                               },
         // fun id x = x
         //
         // Result: Function('a,'a)
@@ -444,4 +569,6 @@ if ( !module.parent )
     ] );
 
     console.log( types.toString() );
+    console.log( types2.toString() );
+    console.log( JSON.stringify( env, null, 4 ) );
 }
