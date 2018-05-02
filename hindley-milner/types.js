@@ -15,7 +15,7 @@ class ParseError extends Error {}
 /**
  * ## Type variable
  *
- * A type variable represents an parameter with an unknown type or any
+ * A type variable represents a parameter with an unknown type or any
  * polymorphic type. For example:
  *
  *     fun id x = x
@@ -25,8 +25,9 @@ class ParseError extends Error {}
 class TypeVariable
 {
     /** */
-    constructor()
+    constructor( name = '<anon>' )
     {
+        this.name = name;
         this.id = TypeVariable.nextId++;
         this.instance = null;
     }
@@ -39,7 +40,7 @@ class TypeVariable
      */
     toString()
     {
-        return this.instance ? this.instance.toString() : "'" + String.fromCharCode( 0x61 + this.id );
+        return this.name + ' ::= ' + ( this.instance ? this.instance.toString() : "'" + String.fromCharCode( 0x61 + this.id ) );
     }
 }
 
@@ -84,20 +85,23 @@ class FunctionType extends TypeOperator
 {
     /**
      * @param {Array<TypeVariable>} types
+     * @param {string} [identifier]
      */
-    constructor( types )
+    constructor( types, identifier )
     {
-        super( "->", types );
+        super( "->", types, identifier );
     }
 }
 
 /** */
 class NumberType extends TypeOperator
 {
-    /** */
-    constructor()
+    /**
+     *
+     */
+    constructor( identifier )
     {
-        super( "Number", [] );
+        super( "Number", [], identifier );
     }
 }
 
@@ -128,6 +132,26 @@ class NullType extends TypeOperator
     constructor()
     {
         super( "Null", [] );
+    }
+}
+
+/** */
+class UndefinedType extends TypeOperator
+{
+    /** */
+    constructor()
+    {
+        super( "Undefined", [] );
+    }
+}
+
+/** */
+class VoidType extends TypeOperator
+{
+    /** */
+    constructor()
+    {
+        super( "Void", [] );
     }
 }
 
@@ -212,6 +236,8 @@ module.exports = {
     StringType,
     BoolType,
     NullType,
+    UndefinedType,
+    VoidType,
 
     Lambda,
     Identifier,
