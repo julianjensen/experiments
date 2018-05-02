@@ -62,7 +62,7 @@ const
 /** *************************************************************************
  * @class
  ****************************************************************************/
-class Observable
+export class Observable
 {
     /**
      * @param {function} [subscribe]
@@ -186,7 +186,7 @@ Observable.promise = function( expose ) {
 /** *************************************************************************
  * @class Subscription
  ****************************************************************************/
-class Subscription
+export class Subscription
 {
     /**
      * @param {function} [unsubFn]
@@ -318,7 +318,7 @@ Subscription.EMPTY = ( empty => {
  * @class Subscriber
  * @extends Subscription
  ****************************************************************************/
-class Subscriber extends Subscription
+export class Subscriber extends Subscription
 {
     /**
      * @param {object|function|Subscriber} [destinationOrNext]
@@ -657,31 +657,33 @@ class AsyncIterSubscriber extends Subscriber
     }
 }
 
-const
-    ticker = Observable.interval( 100 ),
-    long   = Observable.interval( 3000 );
+export default function() {
+    const
+        ticker = Observable.interval( 100 ),
+        long   = Observable.interval( 3000 );
 
-let resolve;
+    let resolve;
 
-const
-    obs    = ticker.filter( v => v & 1 ).debounce( Observable.interval( 500 ) ),
-    toExit = new Promise( r => resolve = r );
+    const
+        obs    = ticker.filter( v => v & 1 ).debounce( Observable.interval( 500 ) ),
+        toExit = new Promise( r => resolve = r );
 
-const subFilter = obs.subscribe( {
-    next:     x => console.log( 'tick:', x ),
-    error:    err => console.error( err ),
-    complete: () => {
-        resolve( 'okay' );
-    }
-} );
+    const subFilter = obs.subscribe( {
+        next:     x => console.log( 'tick:', x ),
+        error:    err => console.error( err ),
+        complete: () => {
+            resolve( 'okay' );
+        }
+    } );
 
-const subscript = long.subscribe( {
-    next: () => {
-        subscript.unsubscribe();
-        subFilter.unsubscribe();
-        setTimeout( () => resolve( 'okay' ), 1000 );
-    }
-} );
+    const subscript = long.subscribe( {
+        next: () => {
+            subscript.unsubscribe();
+            subFilter.unsubscribe();
+            setTimeout( () => resolve( 'okay' ), 1000 );
+        }
+    } );
 
-toExit.then( msg => console.log( 'exit:', msg ) );
+    toExit.then( msg => console.log( 'exit:', msg ) );
+};
 
