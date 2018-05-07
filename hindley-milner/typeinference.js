@@ -108,7 +108,7 @@ function prune( type )
  * Getting a "fresh" type will create a recursive copy. When a generic type
  * variable is encountered, a new variable is generated and substituted in.
  *
- * *Note*: Copied types are instantiated through the BaseType constructor, this
+ * *Note*: Copied types are instantiated through the `TypeOperator` constructor, this
  * means `instanceof` can't be used for determining a subtype.
  *
  * A fresh type is only returned when an identifier is found during analysis.

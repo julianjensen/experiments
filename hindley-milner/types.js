@@ -21,6 +21,21 @@ class ParseError extends Error {}
  *     fun id x = x
  *
  * Here, `id` has the polymorphic type `'a -> 'a`.
+ *
+ * In other words: `id<T>(): T`
+ *
+ * A type variable is the same as a type parameter, i.e. a placeholder that
+ * can be filled in by an actual type at some point. It is also called
+ * a polytype. Once instantiated with an actual type, it becomes a monotype.
+ * Normally, a polytype is not considered an actual type, merely a template of
+ * a type. Once it has been instantiated, it becomes an actual type.
+ *
+ * Therefore:
+ * ```
+ * type Pair<A,B> = [ A. B ]; // Pair is not a type
+ * // ...
+ * Pair<int,char> MyPair;   // Pair<int.char> is an actual type
+ * ```
  */
 class TypeVariable
 {
@@ -51,6 +66,20 @@ TypeVariable.nextId = 0;
  *
  * Base type for all specific types. Using this type as the prototype allows the
  * use of `instanceof` to detect a type variable or an actual type.
+ *
+ * The type operator specifies the basic lambda calculus type and specialization
+ * This means it represents a variable `x`, an abstraction (function) `x -> y`, an application (function
+ * call) `xy` (or `x(y)`, and a let (including `let rec`) `let x = y in z`. It also represents
+ * predefined types like `string` or `number`, for example, allowing for `x : string` which
+ * is expressed as `let identifierName = string in scope`, for all practical purposes. Note that
+ * `x -> y` is a way of expressing `(λx.e)y` and is therefore almost identical to something like the
+ * following:
+ * ```
+ * (λx.e)y
+ * => x(y)
+ * => xy
+ * => let x = y in e
+ * ```
  */
 class TypeOperator
 {
