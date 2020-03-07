@@ -42,7 +42,7 @@
     },
     "dependencies": {
         "esm": "^3.0.28",
-        "espree": "^3.5.4",
+        "espree": "^6.1.0",
         "esprima": "^4.0.0",
         "estraverse": "^4.2.0"
     },
